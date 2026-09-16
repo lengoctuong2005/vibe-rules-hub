@@ -1,0 +1,730 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "."
+      ]
+    },
+    "docker": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-docker"
+      ]
+    },
+    "kubernetes": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@strowk/mcp-k8s"
+      ]
+    },
+    "everything": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-everything"
+      ]
+    },
+    "ssh": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-server-commands"
+      ],
+      "env": {
+        "SSH_HOST": "user@your-server-ip"
+      }
+    },
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref=YOUR_PROJECT_ID"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "sbp_YOUR_TOKEN_HERE"
+      }
+    },
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://user:pass@localhost:5432/mydb"
+      ]
+    },
+    "sqlite": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sqlite",
+        "--db-path",
+        "./antigravity.db"
+      ]
+    },
+    "redis": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-redis",
+        "redis://localhost:6379"
+      ]
+    },
+    "mysql": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mysql-mcp-server"
+      ],
+      "env": {
+        "MYSQL_URL": "mysql://user:pass@localhost:3306/mydb"
+      }
+    },
+    "mongodb": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mongodb-mcp-server"
+      ],
+      "env": {
+        "MONGODB_URI": "mongodb://localhost:27017/my_app"
+      }
+    },
+    "neo4j": {
+      "command": "uvx",
+      "args": [
+        "neo4j-mcp"
+      ],
+      "env": {
+        "NEO4J_URI": "bolt://localhost:7687",
+        "NEO4J_USERNAME": "neo4j",
+        "NEO4J_PASSWORD": "your-password"
+      }
+    },
+    "clickhouse": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@clickhouse/mcp-server"
+      ],
+      "env": {
+        "CLICKHOUSE_URL": "http://localhost:8123"
+      }
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_YOUR_TOKEN_HERE"
+      }
+    },
+    "gitlab": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-gitlab"
+      ],
+      "env": {
+        "GITLAB_PERSONAL_ACCESS_TOKEN": "glpat_YOUR_TOKEN_HERE"
+      }
+    },
+    "git": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-server-git"
+      ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ]
+    },
+    "codegraph": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@astudioplus/codegraph-mcp"
+      ]
+    },
+    "sentry": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@sentry/mcp-server"
+      ],
+      "env": {
+        "SENTRY_AUTH_TOKEN": "sntrys_YOUR_TOKEN_HERE"
+      }
+    },
+    "postman": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@postman/mcp-server"
+      ],
+      "env": {
+        "POSTMAN_API_KEY": "PMAK-YOUR_KEY_HERE"
+      }
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp",
+        "--browser",
+        "chrome"
+      ]
+    },
+    "tavily": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@tavily/mcp-server"
+      ],
+      "env": {
+        "TAVILY_API_KEY": "tvly-YOUR_KEY_HERE"
+      }
+    },
+    "firecrawl": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "firecrawl-mcp"
+      ],
+      "env": {
+        "FIRECRAWL_API_KEY": "fc-YOUR_KEY_HERE"
+      }
+    },
+    "jina-reader": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "jina-mcp-tools"
+      ]
+    },
+    "exa": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "exa-mcp-server"
+      ],
+      "env": {
+        "EXA_API_KEY": "your-exa-api-key"
+      }
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-brave-search"
+      ],
+      "env": {
+        "BRAVE_API_KEY": "BSA-YOUR_KEY_HERE"
+      }
+    },
+    "fetch": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-fetch"
+      ]
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp"
+      ]
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
+    },
+    "omega-memory": {
+      "command": "uvx",
+      "args": [
+        "omega-memory",
+        "serve"
+      ]
+    },
+    "chroma": {
+      "command": "uvx",
+      "args": [
+        "chroma-mcp-server"
+      ]
+    },
+    "qdrant": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@qdrant/mcp-server-qdrant"
+      ],
+      "env": {
+        "QDRANT_URL": "http://localhost:6333"
+      }
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "mem0": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mem0-mcp"
+      ],
+      "env": {
+        "MEM0_API_KEY": "m0-YOUR_KEY_HERE"
+      }
+    },
+    "deepl": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-server-deepl"
+      ],
+      "env": {
+        "DEEPL_API_KEY": "your-deepl-api-key"
+      }
+    },
+    "cloudflare": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@cloudflare/mcp-server-cloudflare"
+      ],
+      "env": {
+        "CLOUDFLARE_API_TOKEN": "your-cloudflare-api-token"
+      }
+    },
+    "virustotal": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@pebbletree/mcp-virustotal"
+      ],
+      "env": {
+        "VIRUSTOTAL_API_KEY": "your-virustotal-api-key"
+      }
+    },
+    "shodan": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-server-shodan"
+      ],
+      "env": {
+        "SHODAN_API_KEY": "your-shodan-api-key"
+      }
+    },
+    "kicad": {
+      "command": "uvx",
+      "args": [
+        "kicad-mcp-pro",
+        "serve"
+      ]
+    },
+    "serial": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@yuanchilin/mcp-serial"
+      ]
+    },
+    "mqtt": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mqtt-mcp-server",
+        "mqtt://localhost:1883"
+      ]
+    },
+    "notion": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@notionhq/notion-mcp-server"
+      ],
+      "env": {
+        "NOTION_API_KEY": "secret_YOUR_KEY_HERE"
+      }
+    },
+    "jira": {
+      "command": "uvx",
+      "args": [
+        "mcp-atlassian==0.21.0"
+      ],
+      "env": {
+        "JIRA_HOST": "https://your-domain.atlassian.net",
+        "JIRA_EMAIL": "user@example.com",
+        "JIRA_API_TOKEN": "your-jira-api-token"
+      }
+    },
+    "linear": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@jerhadf/linear-mcp-server"
+      ],
+      "env": {
+        "LINEAR_API_KEY": "lin_api_YOUR_KEY_HERE"
+      }
+    },
+    "slack": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-slack"
+      ],
+      "env": {
+        "SLACK_BOT_TOKEN": "xoxb-YOUR_TOKEN_HERE"
+      }
+    },
+    "google-drive": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-google-drive"
+      ]
+    },
+    "obsidian": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-obsidian",
+        "./notes"
+      ]
+    },
+    "pdf-reader": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@sylphx/pdf-reader-mcp"
+      ]
+    },
+    "notebooklm": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "notebooklm-mcp"
+      ]
+    },
+    "fal-ai": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "fal-ai-mcp-server"
+      ],
+      "env": {
+        "FAL_KEY": "fal_key_YOUR_KEY_HERE"
+      }
+    },
+    "excel-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-excel"
+      ]
+    },
+    "pptx-generator": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-pptx-generator"
+      ]
+    },
+    "docx-writer": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "docx-mcp-server"
+      ]
+    },
+    "google-sheets": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-google-sheets"
+      ],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "/path/to/credentials.json"
+      }
+    },
+    "google-docs": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "google-docs-mcp"
+      ],
+      "env": {
+        "GOOGLE_DOCS_KEY": "your-google-docs-token"
+      }
+    },
+    "gmail": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-gmail"
+      ],
+      "env": {
+        "GMAIL_TOKEN": "your-gmail-oauth-token"
+      }
+    },
+    "calendar": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-server-calendar"
+      ],
+      "env": {
+        "CALENDAR_AUTH": "your-calendar-token"
+      }
+    },
+    "pandoc": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "pandoc-mcp-server"
+      ]
+    },
+    "stripe": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@stripe/mcp-server-stripe"
+      ],
+      "env": {
+        "STRIPE_SECRET_KEY": "sk_live_YOUR_KEY_HERE"
+      }
+    },
+    "financial-data": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "yahoo-finance-mcp"
+      ]
+    },
+    "crypto-exchange": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "coingecko-mcp"
+      ]
+    },
+    "quickbooks": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "quickbooks-mcp-server"
+      ],
+      "env": {
+        "QUICKBOOKS_TOKEN": "your-qb-token"
+      }
+    },
+    "figma": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@figma/mcp-server-figma"
+      ],
+      "env": {
+        "FIGMA_ACCESS_TOKEN": "figd_YOUR_TOKEN_HERE"
+      }
+    },
+    "excalidraw": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "excalidraw-mcp"
+      ]
+    },
+    "blender": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "blender-mcp"
+      ]
+    },
+    "ffmpeg": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "ffmpeg-mcp-server"
+      ]
+    },
+    "google-analytics": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-google-analytics"
+      ],
+      "env": {
+        "GA4_PROPERTY_ID": "properties/123456789"
+      }
+    },
+    "hubspot": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "hubspot-mcp-server"
+      ],
+      "env": {
+        "HUBSPOT_ACCESS_TOKEN": "pat-na1-YOUR_TOKEN_HERE"
+      }
+    },
+    "seo-audit": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "seo-audit-mcp"
+      ]
+    },
+    "x-social": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "twitter-mcp-server"
+      ],
+      "env": {
+        "TWITTER_BEARER_TOKEN": "your-twitter-bearer-token"
+      }
+    },
+    "youtube": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "youtube-mcp-tools"
+      ]
+    },
+    "pubmed": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "pubmed-mcp-server"
+      ]
+    },
+    "arxiv": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "arxiv-mcp-server"
+      ]
+    },
+    "wolfram": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "wolfram-alpha-mcp"
+      ],
+      "env": {
+        "WOLFRAM_APP_ID": "your-wolfram-app-id"
+      }
+    },
+    "weather": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-weather"
+      ],
+      "env": {
+        "OPENWEATHER_API_KEY": "your-openweather-api-key"
+      }
+    },
+    "openreview": {
+      "command": "uvx",
+      "args": [
+        "--with",
+        "mcp<2",
+        "openreview-mcp"
+      ]
+    },
+    "semantic-scholar": {
+      "command": "uvx",
+      "args": [
+        "semantic-scholar-mcp"
+      ]
+    },
+    "biorxiv": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "biorxiv-mcp-server"
+      ]
+    },
+    "trivy": {
+      "command": "trivy",
+      "args": [
+        "mcp"
+      ]
+    },
+    "huggingface": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@shreyaskarnik/huggingface-mcp-server"
+      ]
+    },
+    "headroom": {
+      "command": "headroom",
+      "args": [
+        "mcp",
+        "serve"
+      ]
+    },
+    "codebase-memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "codebase-memory-mcp"
+      ]
+    },
+    "dbx": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "dbx-mcp"
+      ]
+    },
+    "crossref": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "crossref-mcp-server"
+      ]
+    },
+    "airtable": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "airtable-mcp-server"
+      ],
+      "env": {
+        "AIRTABLE_API_KEY": "your-airtable-api-key"
+      }
+    }
+  }
+}

@@ -7,7 +7,7 @@ Kho tri thức, quy chuẩn hành vi (Rules), kỹ năng thực thi (Skills), qu
 - `rules/`: Quy tắc hành vi, tiêu chuẩn kỹ thuật (React, TypeScript, Python, Golang, Web, Security, Anti-Loop, Humanizer, Invariants).
 - `skills/`: Hơn 2.000+ kỹ năng chuyên sâu (Frontend Design, Backend Architecture, Pentest, Reverse Engineering, Data Analytics, KiCad EDA, Office Automation).
 - `workflows/`: Quy trình điều phối tự động (Orchestrators, Decision Market, Epistemic Check, Code Review, Debugging).
-- `agents/`: Thiết kế và cấu hình phân vai Subagents chuyên trách.
+- `.agent/`: Thiết kế và cấu hình phân vai Subagents chuyên trách (67+ roles chuẩn hóa).
 - `mcp/`: Danh bạ 86+ máy chủ Model Context Protocol (MCP) đã kiểm định kèm cấu hình 1-click.
 - `CLAUDE.md`: Bản hiến pháp vận hành của Claude Core OS.
 - `GEMINI.md`: Bản hiến pháp vận hành của Gemini Core OS.

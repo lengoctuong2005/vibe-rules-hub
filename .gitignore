@@ -1,10 +1,15 @@
+# Environment & Secrets
 .env
 .env.*
 *.key
 *.pem
 *.token
+
+# System & OS
 .DS_Store
 Thumbs.db
+
+# Cache & Temporary
 __pycache__/
 *.pyc
 *.pyo
@@ -13,3 +18,13 @@ __pycache__/
 tmp/
 node_modules/
 dist/
+
+# Runtime, session state & internal agent folders
+agent/
+agents/
+.agents/
+.claude/
+.gemini/
+*.log
+*.sqlite
+*.db

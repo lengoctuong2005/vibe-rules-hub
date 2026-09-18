@@ -1,44 +1,90 @@
-# Multi-Agent Coordination Protocol (Kiến trúc 3 lớp)
+---
+trigger: always_on
+description: "Multi-Agent Coordination & Concurrency: Defines 3-layer isolation (Git Worktrees, append-only events.log, Orchestrator decisions), 2-Phase Locking (2PL), deadlock prevention, merge workflows, and subagent privilege inheritance."
+---
+# Multi-Agent Coordination, Concurrency & Governance
 
-## Purpose
-Ngăn chặn các lỗi đồng bộ, mất context, và xung đột quyết định khi nhiều Agent hoạt động cùng lúc (Multi-Agent) trên cùng một dự án. Áp dụng tư duy hệ thống phân tán (Distributed Systems) vào điều phối LLM Agent.
+## 1. 3-Layer Architecture (Layered Defense)
+Prevent memory corruption, state race conditions, context blindness, and conflicting decisions when multiple agents execute concurrently.
 
-## Mấu chốt Kiến Trúc (Layered Defense)
-Không dùng Bulletin Board (dễ bị ghi đè) hay File Lock (lỗi TOCTOU, lock không atomic). Dùng kiến trúc 3 lớp:
-
-### Lớp 1 — Chống Race Condition bằng Git Worktree (Cách ly vật lý)
-- **Tuyệt đối không dùng File Lock.** Agent rất dễ bỏ qua việc check lock, dẫn đến TOCTOU.
-- **Mỗi Agent phải hoạt động trên một Git Worktree riêng biệt:**
+### 1.1 Layer 1: Physical Isolation via Git Worktrees
+- **Ban Shared Branch Modification:** Subagents must never concurrently write to the same branch or `.git` directory directly.
+- **Dedicated Worktrees:** Every subagent operating on source code runs in an isolated Git Worktree provisioned via `scripts/worktree_manager.py`:
   ```bash
-  git worktree add ../work-agent-a  agent/a-implement
-  git worktree add ../work-agent-b  agent/b-review
+  git worktree add ../work-agent-a agent/a-implement
+  git worktree add ../work-agent-b agent/b-review
   ```
-- Việc ghi file hoàn toàn độc lập về đường dẫn vật lý. Việc gộp code (merge) được giao cho thuật toán của Git (atomic & robust).
+- File writes are physically isolated. Final integration relies on Git atomic merge mechanics.
 
-### Lớp 2 — Chống Context Blindness bằng Append-only Event Log
-- Tạo thư mục `agent_coord/` trong gốc dự án.
-- Sử dụng file `agent_coord/events.log` dưới dạng **Append-only** (JSONL).
-- Agent chỉ được phép GHI THÊM (`>>`), KHÔNG BAO GIỜ SỬA dòng cũ.
+### 1.2 Layer 2: Append-Only Event Log (Context Synchronization)
+- Multi-agent collaboration directory: `agent_coord/` at project root.
+- Log file: `agent_coord/events.log` in append-only JSONL format.
+- Agents only append (`>>`), never edit past records:
   ```jsonl
-  {"ts":"2026-06-28T10:00:00Z","agent":"A","event":"START","file":"payos.js","approach":"Unicode sanitizer"}
-  {"ts":"2026-06-28T10:05:00Z","agent":"B","event":"REVIEW","ref":"a-001","note":"Thiếu case empty string"}
+  {"ts":"2026-09-18T10:00:00Z","agent":"A","event":"START","file":"auth.ts","approach":"JWT validation"}
+  {"ts":"2026-09-18T10:05:00Z","agent":"B","event":"REVIEW","ref":"a-001","note":"Handle empty bearer token"}
   ```
-- **Trước mọi hành động**, Agent phải đọc log này để hiểu đối phương đang làm gì (Single-writer per line).
+- Before taking any major action, read `events.log` to track teammates' progress.
 
-### Lớp 3 — Chống Decision Conflict bằng Role Split + Orchestrator
-- **Luật vàng:** Không bao giờ để 2 Agent ngang hàng tự giải quyết xung đột (tránh infinite loop).
-- Phải có một **Orchestrator** (Agent trọng tài hoặc Con người) nắm quyền quyết định cuối cùng.
-- Các đề xuất (proposals) của Agent A và B được ghi vào thư mục `agent_coord/proposals/` (vd: `a-001.md`, `b-001.md`).
-- **Orchestrator** là người duy nhất (single-writer) có quyền ghi vào `agent_coord/DECISIONS.md`. Luật ghi trong này là tối cao, các Agent con không được cãi.
+### 1.3 Layer 3: Decision Conflict Resolution via Single Orchestrator
+- **Role Split:** Peer agents never resolve architectural conflicts autonomously (prevents infinite debate loops).
+- **Proposals:** Agent proposals are filed under `agent_coord/proposals/` (e.g. `a-001.md`).
+- **Orchestrator Authority:** The Master Orchestrator (or human user) is the single writer to `agent_coord/DECISIONS.md`. Decisions logged here are final and binding.
 
-## Hướng dẫn Vận hành (Dành cho Agent con)
-1. **Hoạt động trong khu vực riêng:** Chỉ sửa file trong worktree của bạn. Tuyệt đối không `cd` sang worktree của agent khác.
-2. **Khai báo Context:** Sau mỗi bước quan trọng, GHI THÊM (`append`) một dòng JSON vào `events.log`. Không sửa dòng của người khác.
-3. **Đề xuất thay vì Tự Quyết (khi có conflict):** Tạo file proposal mới trong `proposals/`. Đánh cờ `NEEDS_ORCHESTRATOR` nếu không thống nhất được với Agent kia.
-4. **Không tự merge:** Việc merge các worktree là nhiệm vụ của Orchestrator sau khi đã đưa ra quyết định tại `DECISIONS.md`.
-5. **Giữ nguyên Vai trò (Role):** Bạn là Implementer hay Reviewer, hãy tuân thủ suốt vòng đời của task.
+## 2. Operational Guidance by Task Scale
+- **Small Task (<30 min, 1 file):** Role Split + `events.log` (sequential implement -> review; worktree optional).
+- **Medium Task (multi-file, parallel):** Full 3 layers (Worktrees + `events.log` + Orchestrator review).
+- **Large Task (>2 agents):** Dedicated worktrees per agent + specialized supervisor agent managing state via `DECISIONS.md`.
 
-## Lựa chọn linh hoạt theo quy mô
-- **Task nhỏ (<30p, 1 file):** Chỉ dùng Role Split + `events.log`. Code và review tuần tự (không cần Worktree).
-- **Task vừa (nhiều file, làm song song):** Dùng đủ 3 lớp (Worktree + Log + Orchestrator).
-- **Task lớn (>2 agent):** Worktree cho từng Agent + Orchestrator Agent chuyên trách quản lý state machine qua `DECISIONS.md`.
+## 3. Two-Phase Locking (2PL) & Resource Governance
+Prevent race conditions when modifying shared resources (`preferences.md`, `.env`, migrations, CI/CD pipelines, session-state):
+
+### 3.1 Lock Protocol (2PL)
+1. **Acquire Phase:** Request explicit lock via `python scripts/lock_manager.py --acquire <resource>`.
+2. **Execute Phase:** Perform file modifications sequentially.
+3. **Release Phase:** Release lock via `python scripts/lock_manager.py --release <resource>`.
+
+### 3.2 Lock Retry with Backoff
+- If lock acquisition fails, retry up to 3 times with 5-second intervals.
+- After 3 failed attempts: release ALL currently held locks immediately (prevents hold-and-wait deadlocks).
+- Apply random backoff (5-15 seconds) before retrying the entire transaction.
+
+### 3.3 Timeout Auto-Release
+- Locks held for >30 seconds without activity are automatically expired and released.
+- Holding agent receives `[LOCK EXPIRED]` notification.
+
+### 3.4 Conflict Resolution
+- If lock conflict or timestamp mismatch occurs, STOP immediately.
+- Issue `[LOCK CONFLICT: <resource>]` and request user guidance.
+
+## 4. Deadlock Prevention & Global Resource Hierarchy
+To prevent circular wait conditions, agents must acquire locks strictly in this global order:
+1. **Database & Migration files** (Highest Priority)
+2. **Environment & Configuration files** (`.env`, `package.json`, `tsconfig.json`)
+3. **Source code files**
+4. **Documentation & Memory files** (Lowest Priority)
+
+*Never request a higher-priority lock while holding a lower-priority lock.*
+
+## 5. Synchronization & Safe Merge Workflow
+- Master Agent aggregates logs and artifacts from all completed worktrees.
+- Merge worktree branches into main using `worktree_manager.py` with `--no-ff` (No Fast-Forward).
+- If merge conflict occurs: automatically execute `git merge --abort`. Master agent resolves conflicts sequentially; never leave Git in a dangling merge state.
+
+## 6. Subagent Privilege Inheritance & Security Boundaries
+Spawned subagents (`browser_subagent`, `spawner.py`, worker agents) inherit parent security posture completely:
+
+### 6.1 Constraint Propagation
+Parent agents must explicitly pass:
+- Active security constraints (secret masking, destructive op guards).
+- Directory and file scope boundaries.
+- Ponytail minimalist discipline (`// ponytail:` comments, YAGNI).
+
+### 6.2 Subagent Self-Audit & Escalation Blocker
+- Subagents must self-verify boundaries before running commands.
+- Block with `[BLOCK: PRIVILEGE ESCALATION]` if a subagent attempts:
+  1. Modifying files outside its delegated directory scope.
+  2. Executing arbitrary commands not authorized in task definition.
+  3. Spawning recursive subagents without parent approval.
+  4. Disabling or bypassing inherited security rules.
+- Parent agents validate all subagent diffs and outputs prior to merge.

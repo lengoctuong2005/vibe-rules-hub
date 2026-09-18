@@ -1,6 +1,6 @@
 ---
 trigger: model_decision
-description: "Workflow: Fullstack Web Suite - End-to-end fullstack web orchestration combining React 19, Next.js, Tailwind v4, Node/Bun/Go/Python backends, Postgres/Redis data layer, OWASP Top 10 security, and automated multi-agent quality gates."
+description: "Workflow: Fullstack Web Suite - End-to-end fullstack web orchestration combining React 19, Next.js App Router, Tailwind CSS v4, Node/Bun/Go backends, PostgreSQL connection pooling, Redis distributed caching, OWASP Top 10 defenses, and multi-agent quality gates."
 tags:
   - fullstack
   - nextjs
@@ -15,7 +15,7 @@ tags:
 
 # Fullstack Web Master Suite Workflow
 
-**MANDATE**: Deliver high-performance, accessible, and secure fullstack web applications by unifying modern frontend mechanics, resilient backend systems, defense-in-depth security, and autonomous subagent delegation.
+**MANDATE**: Build and deploy ultra-high-performance, accessible, and secure web applications by orchestrating React 19 Server Components, type-safe API boundaries, resilient database pools, and autonomous multi-agent pipelines.
 
 ---
 
@@ -47,8 +47,8 @@ graph TD
 ## 2. Step-by-Step Execution Lifecycle
 
 ### Step 1: Inception & Domain Contract Planning
-1. **Vertical Slicing**: Decompose requirements into end-to-end vertical slices (DB migration → Service → API Endpoint → Client Component).
-2. **Contract-First API Design**: Define TypeScript DTOs / Zod schemas shared between frontend and backend.
+1. **Vertical Slicing**: Decompose requirements into end-to-end vertical slices (DB migration -> Service -> API Endpoint -> Client Component).
+2. **Contract-First API Design**: Define TypeScript DTOs and Zod schemas shared between frontend and backend.
 3. **Ponytail Verification**: Apply 7-rung solution ladder before introducing any external dependency or abstraction.
 
 ### Step 2: Backend Architecture & Data Layer
@@ -80,7 +80,7 @@ export async function handleApiRoute(handler: () => Promise<Response>): Promise<
    - Use Tailwind CSS v4 CSS variables for theme tokens (`oklch` color spaces).
    - Use GSAP with ScrollTrigger for compositor-friendly animations (`transform`, `opacity`).
 4. **Accessibility (WCAG 2.2 AA/AAA)**:
-   - Ensure color contrast ratios $\ge 4.5:1$ (normal text) and $\ge 3:1$ (large text/UI elements).
+   - Ensure color contrast ratios >= 4.5:1 (normal text) and >= 3:1 (large text/UI elements).
    - Ensure full keyboard accessibility with visible focus rings (`focus-visible:ring-2`).
 
 ### Step 4: Defense-in-Depth Security Verification
@@ -97,13 +97,103 @@ export async function handleApiRoute(handler: () => Promise<Response>): Promise<
 2. Dispatch `security-reviewer` to verify authorization checks on every Server Action and API endpoint.
 3. Run `e2e-runner` using Playwright to execute headless browser flows.
 4. Verify Core Web Vitals:
-   - **LCP** (Largest Contentful Paint) $< 2.5\text{s}$
-   - **INP** (Interaction to Next Paint) $< 200\text{ms}$
-   - **CLS** (Cumulative Layout Shift) $< 0.1$
+   - **LCP** (Largest Contentful Paint) < 2.5s
+   - **INP** (Interaction to Next Paint) < 200ms
+   - **CLS** (Cumulative Layout Shift) < 0.1
 
 ---
 
-## 3. Definition of Done (DoD) Checklist
+## 3. Subagent Execution Prompts
+
+### Subagent: `planner`
+```markdown
+You are the Lead Fullstack Planner. Decompose the requirement into atomic vertical slices:
+1. Define Database Migration & Entity Models (PostgreSQL + Prisma/Kysely).
+2. Define API Contract & Zod Validation Schemas.
+3. Define React 19 Server/Client Component Hierarchy.
+4. Apply the Ponytail Minimalist Directive (no unnecessary abstractions, stdlib first).
+Output the execution plan in task_list.md.
+```
+
+### Subagent: `architect`
+```markdown
+You are the System Architect. Design the unified domain models, database DDL, and API specifications:
+1. Ensure normalized SQL schema with foreign key indexes and timestamp triggers.
+2. Produce shared TypeScript interfaces for Request/Response payloads.
+3. Enforce Redis cache-aside invalidation strategies for mutating operations.
+```
+
+### Subagent: `tdd-guide`
+```markdown
+You are the TDD Guide. Enforce Red-Green-Refactor testing:
+1. Write integration test suite for API endpoints using Vitest / Supertest.
+2. Assert boundary cases (invalid JSON, expired tokens, missing required fields).
+3. Ensure all tests fail initially (RED) before greenlighting implementation.
+```
+
+### Subagent: `react-reviewer`
+```markdown
+You are the React 19 & Frontend Reviewer. Review all frontend code against:
+1. Proper RSC containment (no "use client" on static components).
+2. React 19 form actions (useActionState, useOptimistic).
+3. Tailwind v4 token compliance and zero layout shift (CLS < 0.1).
+4. WCAG 2.2 AA accessibility (ARIA roles, keyboard trap prevention).
+```
+
+### Subagent: `security-reviewer`
+```markdown
+You are the Application Security Specialist. Perform an exhaustive OWASP Top 10 audit:
+1. Verify parameterization of all SQL queries.
+2. Audit cookie attributes (HttpOnly, Secure, SameSite=Strict).
+3. Scan codebase for hardcoded credentials using safety_guard.py.
+```
+
+### Subagent: `e2e-runner`
+```markdown
+You are the E2E Automation Specialist. Run Playwright synthetic user journeys:
+1. Verify authentication lifecycle (login, session persistence, logout).
+2. Assert Core Web Vitals (LCP < 2.5s, CLS < 0.1, INP < 200ms).
+3. Run automated accessibility scans with axe-core.
+```
+
+---
+
+## 4. Production Database Schema Example
+
+```sql
+-- PostgreSQL Enterprise Core Schema
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    display_name VARCHAR(100) NOT NULL,
+    role VARCHAR(32) NOT NULL DEFAULT 'member',
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS user_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    refresh_token_hash VARCHAR(255) NOT NULL UNIQUE,
+    ip_address INET,
+    user_agent TEXT,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON user_sessions(expires_at);
+```
+
+---
+
+## 5. Definition of Done (DoD) Checklist
 
 - [ ] All API contracts typed and validated via Zod / native schemas at trust boundaries.
 - [ ] React 19 Server Components utilized without unnecessary `"use client"` directives.
@@ -112,4 +202,4 @@ export async function handleApiRoute(handler: () => Promise<Response>): Promise<
 - [ ] Security audit passed (CSRF tokens on mutating routes, SameSite cookies, XSS sanitization).
 - [ ] `python scripts/safety_guard.py --scan-file .` executed clean with 0 secret leaks.
 - [ ] Core Web Vitals green on Lighthouse / Playwright synthetic run.
-- [ ] Subagent review signs-off complete (`planner`, `architect`, `tdd-guide`, `security-reviewer`).
+- [ ] Subagent review sign-offs complete (`planner`, `architect`, `tdd-guide`, `security-reviewer`).

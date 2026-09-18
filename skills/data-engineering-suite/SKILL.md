@@ -1,109 +1,225 @@
 ---
 name: data-engineering-suite
 description: |
-  Master Data Engineering & High-Throughput Pipelines Suite unifying PostgreSQL relational storage, ClickHouse columnar OLAP analytics, Kafka/Redis event streaming, ETL/ELT batch processors, distributed scraping pipelines, and autonomous data quality validation (planner, architect, database-reviewer, tdd-guide).
+  Master Data Engineering Suite for modern analytics and lakehouses: Medallion Architecture (Bronze/Silver/Gold), streaming ingestion (Kafka/Redpanda), vectorized query processing (DuckDB, Polars), dbt transformation models, Great Expectations data contracts, and Change Data Capture (CDC).
 triggers:
-  - "data engineering"
-  - "data pipeline"
+  - "data-engineering"
   - "data-engineering-suite"
-  - "clickhouse"
-  - "kafka stream"
-  - "etl pipeline"
-  - "data scraper"
-  - "high throughput data"
+  - "kafka"
+  - "duckdb"
+  - "polars"
+  - "dbt"
+  - "etl"
+  - "lakehouse"
 license: MIT
 metadata:
   origin: ECC
 ---
 
-# Data Engineering & High-Throughput Pipelines Master Suite
+# Data Engineering Master Suite
 
-Enterprise architecture and engineering patterns for high-volume data ingestion, analytical columnar storage, stream processing, and distributed scraping.
-
----
-
-## 1. End-to-End Data Pipeline Architecture
-
-```
-┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
-│  DATA SOURCES   │      │   EVENT STREAM  │      │  TRANSFORM/ETL  │
-│  APIs, Webhooks │ ───► │  Kafka / Redis  │ ───► │ Workers / Celery│
-│  Scrapers, DBs  │      │  Partitioned    │      │ Micro-batching  │
-└─────────────────┘      └─────────────────┘      └────────┬────────┘
-                                                           │
-                                ┌──────────────────────────┴──────────────────────────┐
-                                ▼                                                     ▼
-                     ┌─────────────────────┐                               ┌─────────────────────┐
-                     │     OLTP STORE      │                               │     OLAP STORE      │
-                     │ PostgreSQL / MySQL  │                               │     ClickHouse      │
-                     │ Relational & State  │                               │ Columnar Analytics  │
-                     └─────────────────────┘                               └─────────────────────┘
-```
+Production-grade framework for designing, implementing, securing, and operating scalable batch and real-time data pipelines, analytical lakehouses, and dimensional data marts.
 
 ---
 
-## 2. ClickHouse OLAP Best Practices
+## 1. System Architecture Topology
 
-### Engine Selection & Partitioning Strategy
-- **ReplacingMergeTree**: Best for deduplication based on version column.
-- **SummingMergeTree**: Ideal for pre-aggregated metrics and timeseries rollups.
-- **Partition By**: Partition by `toYYYYMM(event_time)` to keep active partition count small.
-- **Order By**: Order by primary filter columns in increasing cardinality order: `(tenant_id, event_type, event_time)`.
-
-```sql
--- ponytail: Production ClickHouse Event Table Definition
-CREATE TABLE default.events_stream (
-    event_id UUID,
-    tenant_id UInt32,
-    event_type LowCardinality(String),
-    payload String,
-    event_time DateTime64(3, 'UTC'),
-    created_at DateTime DEFAULT now()
-) ENGINE = ReplacingMergeTree(created_at)
-PARTITION BY toYYYYMM(event_time)
-ORDER BY (tenant_id, event_type, event_time, event_id)
-TTL event_time + INTERVAL 90 DAY;
+```
++─────────────────────────────────────────────────────────────────────────+
+|                          RAW DATA SOURCES                               |
+|  Transactional DBs (Postgres CDC) · Webhook Streams · IoT Telemetry     |
++────────────────────────────────────┬────────────────────────────────────+
+                                     │ Streaming (Kafka) / Batch Files
+                                     ▼
++─────────────────────────────────────────────────────────────────────────+
+|                       BRONZE LAYER (RAW STORAGE)                        |
+|  Immutable Append-Only Parquet / Iceberg · Ingestion Metadata Tagging    |
++────────────────────────────────────┬────────────────────────────────────+
+                                     │ Vectorized Ingestion (Polars/DuckDB)
+                                     ▼
++─────────────────────────────────────────────────────────────────────────+
+|                      SILVER LAYER (CLEANED & TYPED)                     |
+|  Deduplication · Schema Enforcement · Great Expectations Contract Gate  |
++────────────────────────────────────┬────────────────────────────────────+
+                                     │ dbt Incremental Transformations
+                                     ▼
++─────────────────────────────────────────────────────────────────────────+
+|                     GOLD LAYER (DIMENSIONAL MARTS)                      |
+|  Star Schema (Facts & Dimensions) · Aggregations · Feature Stores       |
++────────────────────────────────────┬────────────────────────────────────+
+                                     │ SQL Queries / BI Connectors
+                                     ▼
++─────────────────────────────────────────────────────────────────────────+
+|                     ANALYTICS & CONSUMPTION TIER                        |
+|  Executive BI Dashboards · ML Feature Extraction · Ad-hoc DuckDB SQL    |
++─────────────────────────────────────────────────────────────────────────+
 ```
 
 ---
 
-## 3. Stream Processing & Kafka Consumers
+## 2. Fast Columnar Processing with DuckDB
 
 ```python
-# ponytail: Idempotent Kafka Consumer Pattern with Schema Validation
-from pydantic import BaseModel, Field
-from datetime import datetime
-import json
+# analytics/duckdb_analytics.py
+import duckdb
 
-class EventMessage(BaseModel):
-    event_id: str
-    tenant_id: int
-    event_type: str
-    payload: dict
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-
-def process_stream_message(raw_msg_bytes: bytes, processed_ids_cache: set) -> bool:
-    try:
-        data = json.loads(raw_msg_bytes.decode('utf-8'))
-        event = EventMessage.parse_obj(data)
-
-        # Idempotency check
-        if event.event_id in processed_ids_cache:
-            return True
-
-        # Process business transformation...
-        processed_ids_cache.add(event.event_id)
-        return True
-    except Exception as err:
-        # Route to Dead Letter Queue (DLQ)
-        return False
+# ponytail: In-memory vectorized analytics query on Parquet files
+def analyze_daily_sales_trends(parquet_glob: str) -> duckdb.DuckDBPyRelation:
+    con = duckdb.connect(database=":memory:")
+    query = f'''
+        SELECT
+            date_trunc('day', timestamp) AS order_date,
+            country_code,
+            COUNT(order_id) AS total_orders,
+            SUM(amount_cents) / 100.0 AS total_revenue_usd,
+            AVG(amount_cents) / 100.0 AS average_order_value
+        FROM read_parquet('{parquet_glob}')
+        WHERE status = 'COMPLETED'
+        GROUP BY 1, 2
+        ORDER BY 1 DESC, 4 DESC;
+    '''
+    return con.sql(query)
 ```
 
 ---
 
-## 4. Distributed Web Scraping & Ingestion
+## 3. Polars Streaming Pipeline with Checkpointing
 
-### Resilience Standards
-1. **Header Rotation & User-Agent Management**: Mimic standard desktop browser headers without synthetic anomalies.
-2. **Politeness & Rate Limits**: Maximum 5 concurrent requests per domain with randomized delays (100ms - 500ms).
-3. **Structured HTML Extraction**: Use CSS selectors with fallback heuristics. Verify required fields exist before committing records.
+```python
+# pipeline/streaming_pipeline.py
+import polars as pl
+from pathlib import Path
+
+def process_stream_batch(source_dir: str, output_parquet: str) -> int:
+    # Scan new raw JSON files incrementally
+    lazy_df = (
+        pl.scan_ndjson(f"{source_dir}/*.json")
+        .with_columns(
+            pl.col("timestamp").str.to_datetime(),
+            pl.col("user_id").cast(pl.Utf8),
+            pl.col("amount_cents").cast(pl.Int64)
+        )
+        .filter(pl.col("amount_cents") > 0)
+    )
+
+    df = lazy_df.collect()
+    df.write_parquet(output_parquet, compression="zstd")
+    return len(df)
+```
+
+---
+
+## 4. dbt Dimensional Model Blueprint
+
+```sql
+-- models/marts/fct_orders.sql
+{{ config(
+    materialized='incremental',
+    unique_key='order_id',
+    incremental_strategy='merge'
+) }}
+
+WITH source_data AS (
+    SELECT * FROM {{ ref('stg_orders') }}
+    {% if is_incremental() %}
+      WHERE updated_at > (SELECT MAX(updated_at) FROM {{ this }})
+    {% endif %}
+),
+
+customers AS (
+    SELECT * FROM {{ ref('dim_customers') }}
+)
+
+SELECT
+    s.order_id,
+    c.customer_key,
+    s.order_date,
+    s.status,
+    s.total_amount_cents,
+    s.discount_amount_cents,
+    (s.total_amount_cents - s.discount_amount_cents) AS net_amount_cents,
+    s.updated_at
+FROM source_data s
+INNER JOIN customers c ON s.customer_id = c.customer_id AND c.is_current = true
+```
+
+---
+
+## 5. Great Expectations Data Contract Suite
+
+```json
+{
+  "expectation_suite_name": "orders_bronze_to_silver",
+  "meta": {
+    "great_expectations_version": "0.18.0"
+  },
+  "expectations": [
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "order_id" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_in_set",
+      "kwargs": {
+        "column": "status",
+        "value_set": ["PENDING", "PROCESSING", "COMPLETED", "CANCELLED"]
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": {
+        "column": "amount_cents",
+        "min_value": 0,
+        "max_value": 100000000
+      }
+    }
+  ]
+}
+```
+
+---
+
+## 6. Real-Time Kafka Streaming Consumer (Python)
+
+```python
+# pipeline/kafka_consumer.py
+import json
+from kafka import KafkaConsumer
+import polars as pl
+
+def stream_cdc_events(bootstrap_servers: str, topic: str):
+    consumer = KafkaConsumer(
+        topic,
+        bootstrap_servers=bootstrap_servers,
+        auto_offset_reset='earliest',
+        enable_auto_commit=True,
+        group_id='analytics_bronze_writer',
+        value_deserializer=lambda x: json.loads(x.decode('utf-8'))
+    )
+
+    batch = []
+    for message in consumer:
+        payload = message.value.get('payload', {})
+        batch.append({
+            'op': payload.get('op'),
+            'table': message.value.get('schema', {}).get('name'),
+            'after': json.dumps(payload.get('after', {})),
+            'ts_ms': payload.get('ts_ms')
+        })
+        if len(batch) >= 1000:
+            df = pl.DataFrame(batch)
+            df.write_parquet(f"/data/bronze/cdc_{message.offset}.parquet")
+            batch = []
+```
+
+---
+
+## 7. Subagent Delegation Matrix
+
+| Subagent | Role & Objective | Deliverable |
+|----------|------------------|-------------|
+| `data-architect` | Medallion architecture & dimensional modeling | `data_architecture.md` |
+| `pipeline-engineer` | Kafka consumers, Polars ETL & CDC ingestion | Pipeline source scripts |
+| `dbt-modeler` | dbt incremental models & schema tests | dbt SQL models |
+| `data-quality-guard`| Great Expectations data contracts & alerts | Data quality test suite |
+| `performance-tuner` | Parquet compression, indexing & SQL tuning | Performance benchmark |

@@ -1,15 +1,14 @@
 ---
 name: design-to-code-suite
 description: |
-  Design to Code Master Suite translating visual design tokens and layout architectures into pristine code. Integrates 150+ Design Systems (Apple, Stripe, Linear, Vercel, Neo-Brutalism, Bento Grid), 109 layout templates, W3C Design Tokens JSON, fluid CSS clamp() typography & spacing, GSAP 60fps compositor animations, and WCAG AAA accessibility with dedicated subagents (a11y-architect, react-reviewer, code-simplifier).
+  Master Design-to-Code Suite for transforming Figma designs and Design Token Community Group (DTCG) tokens into production React component systems, Tailwind CSS v4 design tokens, fluid typography, GSAP micro-interactions, WCAG 2.2 AAA accessibility, and visual regression pipelines.
 triggers:
   - "design-to-code"
-  - "design suite"
   - "design-to-code-suite"
-  - "design systems"
-  - "apple stripe linear design"
-  - "gsap animations"
-  - "wcag accessibility"
+  - "design tokens"
+  - "figma to code"
+  - "component system"
+  - "ui polish"
 license: MIT
 metadata:
   origin: ECC
@@ -17,112 +16,146 @@ metadata:
 
 # Design to Code Master Suite
 
-Comprehensive UI/UX translation engine converting design system specifications, tokens, and structural layout templates into production code.
+Comprehensive framework for translating design artifacts into production-grade, accessible, and responsive component libraries with automated visual quality controls.
 
 ---
 
-## 1. Supported Design Systems (150+)
+## 1. System Architecture Topology
 
-| Design System Category | Exemplar Brands | Key Visual Signatures |
-|------------------------|-----------------|-----------------------|
-| **Dark Luxury & Tech** | Apple, Linear, Arc, Raycast | Deep monochrome backgrounds, translucent glassmorphism (`backdrop-blur`), electric hairline borders (`border-white/10`) |
-| **Fintech & Mesh Gradients** | Stripe, Ramp, Brex | Multi-color animated mesh gradients, crisp 4px grid spacing, elevated soft shadows |
-| **Minimalist Engineering** | Vercel, Supabase, Cloudflare | High-contrast black/white, geometric monospaced accents, clean data tables |
-| **Neo-Brutalism** | Gumroad, Retool, Figma Blog | Bold 2px black borders, sharp 4px hard drop shadows, saturated pop accents |
-| **Bento & Editorial** | Apple Events, Notion, Framer | Asymmetric grid cards, varied aspect ratios, fluid typography (`clamp()`) |
-
----
-
-## 2. W3C Design Tokens Schema & OKLCH Color Model
-
-Colors are defined using OKLCH color space for uniform perceptual lightness across light and dark modes:
-
-```json
-{
-  "color": {
-    "brand": {
-      "primary": {
-        "value": "oklch(0.65 0.22 260)",
-        "type": "color",
-        "description": "Primary brand accent token"
-      },
-      "surface": {
-        "value": "oklch(0.98 0.01 250)",
-        "type": "color"
-      }
-    }
-  },
-  "spacing": {
-    "base": { "value": "4px", "type": "dimension" },
-    "section": { "value": "clamp(3rem, 2rem + 4vw, 8rem)", "type": "dimension" }
-  }
-}
+```
++─────────────────────────────────────────────────────────────────────────+
+|                        FIGMA DESIGN & DTCG TOKENS                       |
+|  Color Palette (oklch) · Spacing Scale · Fluid Typography · Elevations   |
++────────────────────────────────────┬────────────────────────────────────+
+                                     │ Automated Token Sync
+                                     ▼
++─────────────────────────────────────────────────────────────────────────+
+|                       CSS TOKEN & THEME COMPILER                        |
+|  Tailwind CSS v4 @theme · CSS Custom Properties · Dark/Light Themes     |
++────────────────────────────────────┬────────────────────────────────────+
+                                     │
+                  ┌──────────────────┴──────────────────┐
+                  ▼                                     ▼
++──────────────────────────────────┐  +───────────────────────────────────+
+|    HEADLESS ACCESSIBLE CORE      |  |         MOTION & CHOREOGRAPHY     |
+|  Radix UI / Ark UI Primitives    |  |  GSAP Timelines (60/120fps)       |
+|  Keyboard Traps & ARIA Roles     |  |  prefers-reduced-motion Handling  |
++─────────────────┬────────────────┘  +─────────────────┬─────────────────+
+                  │                                     │
+                  └──────────────────┬──────────────────┘
+                                     │
+                                     ▼
++─────────────────────────────────────────────────────────────────────────+
+|                      PRODUCTION COMPONENT SYSTEM                        |
+|  Compound React 19 Components · Strict Props Interface · Zero Overheads|
++────────────────────────────────────┬────────────────────────────────────+
+                                     │
+                                     ▼
++─────────────────────────────────────────────────────────────────────────+
+|                     VISUAL REGRESSION QUALITY GATE                      |
+|  Playwright Multi-Breakpoint Snapshots · Pixel Diff Threshold < 0.1%    |
++─────────────────────────────────────────────────────────────────────────+
 ```
 
 ---
 
-## 3. Fluid Layout & Typography Engine
-
-Eliminate abrupt breakpoint jumps by computing continuous fluid scales:
-
-$$\text{CSS Clamp Value} = \text{clamp}(V_{\min}, \text{base} + \text{rate} \times \text{viewport width}, V_{\max})$$
+## 2. Fluid Typography & Design Tokens Setup
 
 ```css
+/* src/styles/tokens.css */
 :root {
-  /* Fluid Text Scaling (16px at 320px width -> 18px at 1440px width) */
-  --text-body: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  /* Colors in oklch */
+  --color-canvas: oklch(0.99 0.002 240);
+  --color-card: oklch(0.97 0.005 240);
+  --color-border: oklch(0.90 0.01 240);
+  --color-text-main: oklch(0.15 0.02 240);
+  --color-brand: oklch(0.60 0.24 265);
 
-  /* Fluid Heading Scaling (32px at 320px width -> 60px at 1440px width) */
-  --text-display: clamp(2rem, 1.25rem + 3.75vw, 3.75rem);
+  /* Fluid typography */
+  --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+  --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  --text-xl: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+  --text-hero: clamp(2.5rem, 2rem + 2.5vw, 4.5rem);
 
-  /* Fluid Section Spacing (48px -> 128px) */
-  --space-section: clamp(3rem, 1.5rem + 7.5vw, 8rem);
+  /* Shadows */
+  --shadow-subtle: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+  --shadow-float: 0 10px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.05);
+}
+
+[data-theme="dark"] {
+  --color-canvas: oklch(0.12 0.01 240);
+  --color-card: oklch(0.18 0.015 240);
+  --color-border: oklch(0.28 0.02 240);
+  --color-text-main: oklch(0.96 0.005 240);
+  --color-brand: oklch(0.68 0.22 265);
 }
 ```
 
 ---
 
-## 4. Compositor-Only Motion (GSAP 60fps)
+## 3. Accessible Dialog Compound Component
 
-To prevent main-thread layout thrashing, animations are restricted to hardware-accelerated compositor properties:
+```tsx
+// src/components/ui/Dialog.tsx
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-```typescript
-// components/AnimatedSurfaceCard.tsx
-'use client';
+interface DialogContextType {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}
 
-import React, { useRef } from 'react';
-import gsap from 'gsap';
+const DialogContext = createContext<DialogContextType | undefined>(undefined);
 
-export function AnimatedSurfaceCard({ children }: { children: React.ReactNode }) {
-  const cardRef = useRef<HTMLDivElement>(null);
+export function DialogRoot({ children }: { children: React.ReactNode }) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <DialogContext.Provider value={{ isOpen, setIsOpen }}>
+      {children}
+    </DialogContext.Provider>
+  );
+}
 
-  // ponytail: GPU compositor hover tilt - purely on transform/opacity
-  const handleMouseEnter = () => {
-    gsap.to(cardRef.current, {
-      scale: 1.02,
-      y: -4,
-      duration: 0.3,
-      ease: 'power2.out',
-    });
-  };
+export function DialogTrigger({ children }: { children: React.ReactElement }) {
+  const context = useContext(DialogContext);
+  if (!context) throw new Error('DialogTrigger must be used within DialogRoot');
 
-  const handleMouseLeave = () => {
-    gsap.to(cardRef.current, {
-      scale: 1,
-      y: 0,
-      duration: 0.3,
-      ease: 'power2.inOut',
-    });
-  };
+  return React.cloneElement(children, {
+    onClick: () => context.setIsOpen(true),
+    'aria-haspopup': 'dialog',
+    'aria-expanded': context.isOpen,
+  });
+}
+
+// ponytail: Accessible Modal Overlay with Escape key listener
+export function DialogContent({ children }: { children: React.ReactNode }) {
+  const context = useContext(DialogContext);
+  if (!context) throw new Error('DialogContent must be used within DialogRoot');
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') context.setIsOpen(false);
+    };
+    if (context.isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [context.isOpen]);
+
+  if (!context.isOpen) return null;
 
   return (
-    <div
-      ref={cardRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm transition-colors will-change-transform"
-    >
-      {children}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="w-full max-w-lg rounded-2xl bg-card p-6 shadow-float border border-border"
+      >
+        {children}
+      </div>
     </div>
   );
 }
@@ -130,33 +163,57 @@ export function AnimatedSurfaceCard({ children }: { children: React.ReactNode })
 
 ---
 
-## 5. WCAG AAA Accessibility Standards
+## 4. Accessible Dropdown Menu Compound Component
 
-1. **Color Contrast**: Minimum $7:1$ for normal body text, $4.5:1$ for large text ($\ge 18\text{pt}$ or $\ge 14\text{pt}$ bold).
-2. **Focus Visibility**: Custom high-visibility focus indicators (`focus-visible:ring-2 focus-visible:ring-offset-2`).
-3. **Motion Sensitivity**: Automatically suppress GSAP animations when `prefers-reduced-motion: reduce` is active.
+```tsx
+// src/components/ui/Dropdown.tsx
+import React, { useState, useRef, useEffect } from 'react';
 
----
+export function DropdownMenu({ trigger, items }: { trigger: React.ReactNode; items: Array<{ label: string; onClick: () => void }> }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-## 6. Subagent Quality Matrix
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-| Subagent | Responsibility | Pass Criteria |
-|----------|----------------|---------------|
-| `a11y-architect` | Accessibility verification, contrast math, ARIA landmark checks | 100% WCAG 2.2 AAA contrast compliance |
-| `react-reviewer` | Layout shifts (CLS), component decomposition, hydration safety | 0 CLS layout shifts, clean RSC boundaries |
-| `code-simplifier` | Ponytail CSS minimalism, token consolidation | Zero duplicate CSS rules or dead classes |
-
----
-
-## 7. Verification Checklist
-
-```bash
-# 1. Automated Accessibility Audit (Axe / Lighthouse)
-pnpm axe-core-check
-
-# 2. CSS & Token Linting
-pnpm stylelint "src/**/*.css"
-
-# 3. Secret scan
-python scripts/safety_guard.py --scan-file .
+  return (
+    <div className="relative inline-block text-left" ref={containerRef}>
+      <button onClick={() => setOpen(!open)} className="btn-secondary" aria-expanded={open}>
+        {trigger}
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 w-48 rounded-xl bg-card p-1 shadow-float border border-border z-50">
+          {items.map((item, idx) => (
+            <button
+              key={idx}
+              onClick={() => { item.onClick(); setOpen(false); }}
+              className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-brand/10 transition-colors"
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 ```
+
+---
+
+## 5. Subagent Delegation Matrix
+
+| Subagent | Role & Objective | Deliverable |
+|----------|------------------|-------------|
+| `design-token-parser` | DTCG token parsing to Tailwind v4 CSS | `tokens.css` |
+| `component-architect` | Headless, accessible compound UI components | Component library |
+| `ui-polish-reviewer` | Spacing grid consistency & GSAP micro-motion | Animation polish |
+| `accessibility-auditor` | WCAG 2.2 AAA contrast & keyboard navigation | A11y report |
+| `visual-regression-runner`| Playwright visual diffs across screen sizes | Visual test suite |

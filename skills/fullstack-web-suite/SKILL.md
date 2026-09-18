@@ -20,38 +20,38 @@ Comprehensive, production-ready framework integrating next-generation frontend f
 
 ---
 
-## 1. Architecture Overview
+## 1. Architecture Topology
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           CLIENT LAYER                                  │
-│  React 19 (Server/Client Components) + Tailwind v4 + GSAP (60fps)       │
-│  State: Server Actions, useActionState, useOptimistic, TanStack Query   │
-└────────────────────────────────────┬────────────────────────────────────┘
-                                     │ HTTPS / HTTP2 / WSS
-                                     ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           GATEWAY & AUTH                                │
-│  HttpOnly, Secure, SameSite=Strict Cookies + CSRF Protection            │
-│  Rate Limiting (Redis Token Bucket) + Input Sanitization                │
-└────────────────────────────────────┬────────────────────────────────────┘
-                                     │
-                  ┌──────────────────┴──────────────────┐
-                  ▼                                     ▼
-┌──────────────────────────────────┐  ┌───────────────────────────────────┐
-│        APPLICATION BACKEND       │  │        ASYNCHRONOUS WORKERS       │
-│  Node.js / Bun / Go / Python     │  │  Redis Streams / BullMQ / Celery  │
-│  Clean Hexagonal Architecture    │  │  Event-Driven Background Jobs     │
-└─────────────────┬────────────────┘  └─────────────────┬─────────────────┘
-                  │                                     │
-                  └──────────────────┬──────────────────┘
-                                     │
-                                     ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                             DATA LAYER                                  │
-│  PostgreSQL (Connection Pooling / PgBouncer) + Prisma / Kysely ORM      │
-│  Redis Distributed Cache (Cache-Aside + Read-Through)                   │
-└─────────────────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------------------+
+|                           CLIENT LAYER                                  |
+|  React 19 (Server/Client Components) + Tailwind v4 + GSAP (60fps)       |
+|  State: Server Actions, useActionState, useOptimistic, TanStack Query   |
++------------------------------------+------------------------------------+
+                                     | HTTPS / HTTP2 / WSS
+                                     v
++-------------------------------------------------------------------------+
+|                           GATEWAY & AUTH                                |
+|  HttpOnly, Secure, SameSite=Strict Cookies + CSRF Protection            |
+|  Rate Limiting (Redis Token Bucket) + Input Sanitization                |
++------------------------------------+------------------------------------+
+                                     |
+                  +------------------+------------------+
+                  v                                     v
++----------------------------------+  +-----------------------------------+
+|        APPLICATION BACKEND       |  |        ASYNCHRONOUS WORKERS       |
+|  Node.js / Bun / Go / Python     |  |  Redis Streams / BullMQ / Celery  |
+|  Clean Hexagonal Architecture    |  |  Event-Driven Background Jobs     |
++-----------------+----------------+  +-----------------+-----------------+
+                  |                                     |
+                  +------------------+------------------+
+                                     |
+                                     v
++-------------------------------------------------------------------------+
+|                             DATA LAYER                                  |
+|  PostgreSQL (Connection Pooling / PgBouncer) + Prisma / Kysely ORM      |
+|  Redis Distributed Cache (Cache-Aside + Read-Through)                   |
++-------------------------------------------------------------------------+
 ```
 
 ---
@@ -112,9 +112,45 @@ export async function updateProfileAction(prevState: unknown, formData: FormData
 }
 ```
 
-### Motion & Animation (GSAP)
-- Animate only compositor properties (`transform`, `opacity`, `filter`).
-- Always clean up GSAP contexts in React `useEffect` or `useLayoutEffect`.
+### React 19 Optimistic UI Implementation
+```tsx
+'use client';
+
+import { useOptimistic, useTransition } from 'react';
+import { updateProfileAction } from '@/app/actions/update-profile';
+
+interface ProfileProps {
+  user: { id: string; name: string; bio?: string };
+}
+
+export function ProfileForm({ user }: ProfileProps) {
+  const [isPending, startTransition] = useTransition();
+  const [optimisticUser, setOptimisticUser] = useOptimistic(
+    user,
+    (state, update: Partial<typeof user>) => ({ ...state, ...update })
+  );
+
+  return (
+    <form action={(formData) => {
+      const name = formData.get('displayName') as string;
+      startTransition(async () => {
+        setOptimisticUser({ name });
+        await updateProfileAction(null, formData);
+      });
+    }}>
+      <input type="hidden" name="userId" value={user.id} />
+      <input
+        name="displayName"
+        defaultValue={optimisticUser.name}
+        className="rounded border px-3 py-2 text-brand-text"
+      />
+      <button type="submit" disabled={isPending} className="btn-primary">
+        {isPending ? 'Saving...' : 'Save Profile'}
+      </button>
+    </form>
+  );
+}
+```
 
 ---
 
@@ -165,6 +201,29 @@ export async function fetchWithCache<T>(
 }
 ```
 
+### Distributed Rate Limiter (Token Bucket)
+```typescript
+// lib/rate-limit.ts
+import { Redis } from 'ioredis';
+
+export async function checkRateLimit(
+  redis: Redis,
+  identifier: string,
+  limit: number = 60,
+  windowSeconds: number = 60
+): Promise<{ allowed: boolean; remaining: number }> {
+  const key = `rate_limit:${identifier}`;
+  const current = await redis.incr(key);
+  if (current === 1) {
+    await redis.expire(key, windowSeconds);
+  }
+  return {
+    allowed: current <= limit,
+    remaining: Math.max(0, limit - current)
+  };
+}
+```
+
 ---
 
 ## 4. Defense-in-Depth Security Protocol
@@ -174,7 +233,7 @@ export async function fetchWithCache<T>(
    - JWT validation with asymmetric public/private keys (RS256 / EdDSA).
 2. **OWASP Top 10 Mitigation**:
    - **A01 Broken Access Control**: Verify user permissions on every Server Action and API route.
-   - **A02 Cryptographic Failures**: Passwords hashed with `Argon2id` or `bcrypt` (cost $\ge 12$).
+   - **A02 Cryptographic Failures**: Passwords hashed with `Argon2id` or `bcrypt` (cost >= 12).
    - **A03 Injection**: 100% Parameterized queries via ORM / Query Builder.
    - **A07 Identification Failures**: Rate limit authentication attempts (Redis Token Bucket).
 3. **Secret Scanning**:

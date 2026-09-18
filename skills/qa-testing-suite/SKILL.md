@@ -1,134 +1,215 @@
 ---
 name: qa-testing-suite
 description: |
-  Master Quality Assurance, Test-Driven Development (TDD) & End-to-End (E2E) Suite unifying Playwright browser automation, Vitest/Jest/PyTest unit testing, visual regression snapshots, contract testing, and autonomous multi-agent verification gates (planner, tdd-guide, code-reviewer, e2e-runner).
+  Master QA Testing Suite for end-to-end quality assurance: Test Pyramid orchestration, Vitest/Jest unit testing, Testcontainers integration testing (PostgreSQL/Redis), Pact contract testing, Playwright headless E2E automation, k6 load benchmarking, and automated flaky test quarantine.
 triggers:
-  - "qa testing"
-  - "qa suite"
+  - "qa"
   - "qa-testing-suite"
-  - "tdd guide"
-  - "playwright e2e"
-  - "vitest test"
-  - "pytest testing"
-  - "visual regression"
+  - "testing suite"
+  - "playwright"
+  - "vitest"
+  - "testcontainers"
+  - "load testing"
+  - "k6"
 license: MIT
 metadata:
   origin: ECC
 ---
 
-# QA Testing & Continuous Quality Master Suite
+# QA Testing Master Suite
 
-Comprehensive quality engineering framework uniting unit, integration, visual regression, and multi-browser end-to-end testing with autonomous multi-agent quality gates.
-
----
-
-## 1. Multi-Tier Testing Pyramid Architecture
-
-```
-                      ▲
-                     / \
-                    /   \
-                   / E2E \       Playwright (Chromium, Firefox, WebKit)
-                  /───────\      Critical flows & Visual Regression
-                 / Integr- \     API routes, DB Transactions,
-                /   ation   \    Service Boundaries (Supertest, Testcontainers)
-               /─────────────\
-              /     Unit      \  Vitest / Jest / PyTest
-             /─────────────────\ Fast, isolated, pure function testing (>= 80% coverage)
-```
+Enterprise quality assurance framework implementing rigorous multi-tier testing, containerized integration environments, end-to-end browser automation, and performance benchmarks.
 
 ---
 
-## 2. Test-Driven Development (TDD) Workflow
+## 1. System Architecture Topology
 
-### The Iron Rule of TDD
-1. **Red**: Write a test for non-existent or modified functionality. Run it and verify failure.
-2. **Green**: Write the simplest implementation that makes the test pass.
-3. **Refactor**: Clean up the code while keeping all tests green.
-
-```python
-# ponytail: Python PyTest TDD - pure function boundary check
-import pytest
-
-def format_currency_cents(cents: int, currency: str = "USD") -> str:
-    if cents < 0:
-        raise ValueError("Currency amount cannot be negative")
-    dollars = cents / 100.0
-    return f"${dollars:,.2f} {currency}"
-
-def test_format_currency_cents_standard():
-    assert format_currency_cents(125050) == "$1,250.50 USD"
-
-def test_format_currency_cents_zero():
-    assert format_currency_cents(0) == "$0.00 USD"
-
-def test_format_currency_cents_negative_raises():
-    with pytest.raises(ValueError, match="cannot be negative"):
-        format_currency_cents(-500)
+```
++─────────────────────────────────────────────────────────────────────────+
+|                         THE TESTING PYRAMID                             |
+|                                                                         |
+|                          /  E2E (10%)  \                                |
+|                         /  Playwright   \                               |
+|                        /─────────────────\                              |
+|                       / INTEGRATION (20%) \                             |
+|                      /   Testcontainers    \                            |
+|                     /───────────────────────\                           |
+|                    /       UNIT (70%)        \                          |
+|                   /       Vitest / Pytest     \                         |
+|                  /─────────────────────────────\                        |
++────────────────────────────────────┬────────────────────────────────────+
+                                     │ Continuous Execution Gate
+                                     ▼
++─────────────────────────────────────────────────────────────────────────+
+|                       PERFORMANCE & CHAOS TESTING                       |
+|  k6 Load Benchmarks (p95 < 30ms) · Network Latency Fault Injection      |
++────────────────────────────────────┬────────────────────────────────────+
+                                     │
+                                     ▼
++─────────────────────────────────────────────────────────────────────────+
+|                     FLAKY TEST QUARANTINE ENGINE                        |
+|  Auto-Retry (Max 2) · Quarantine Tagging · Flakiness Tracker            |
++─────────────────────────────────────────────────────────────────────────+
 ```
 
 ---
 
-## 3. Playwright E2E & Visual Regression Standards
-
-### Best Practices
-- **Resilient Selectors**: Prefer `getByRole`, `getByLabel`, `getByTestId` over brittle CSS/XPath selectors.
-- **Auto-Waiting**: Avoid arbitrary `page.waitForTimeout()`. Rely on Playwright's built-in web-first assertions (`expect(locator).toBeVisible()`).
-- **Visual Regression**: Use `expect(page).toHaveScreenshot()` with threshold configurations.
+## 2. Integration Test with Testcontainers & PostgreSQL
 
 ```typescript
-// playwright.config.ts
-import { defineConfig, devices } from '@playwright/test';
+// tests/integration/user-repo.test.ts
+import { describe, it, beforeAll, afterAll, expect } from 'vitest';
+import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { Pool } from 'pg';
 
-export default defineConfig({
-  testDir: './e2e',
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined,
-  reporter: [['html', { open: 'never' }]],
-  use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-  },
-  projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
-    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
-    { name: 'Mobile Safari', use: { ...devices['iPhone 14'] } },
-  ],
-});
-```
+describe('UserRepository Integration Test', () => {
+  let container: StartedPostgreSqlContainer;
+  let pool: Pool;
 
----
+  beforeAll(async () => {
+    container = await new PostgreSqlContainer('postgres:16-alpine')
+      .withDatabase('testdb')
+      .withUsername('testuser')
+      .withPassword('testpass')
+      .start();
 
-## 4. Contract & Schema Testing
+    pool = new Pool({ connectionString: container.getConnectionUri() });
 
-Validate data transfer objects across system boundaries to guarantee API backwards compatibility:
+    // Run schema migrations
+    await pool.query(`
+      CREATE TABLE users (
+        id UUID PRIMARY KEY,
+        email VARCHAR(255) NOT NULL UNIQUE
+      );
+    `);
+  }, 30000);
 
-```typescript
-// ponytail: Zod Schema Contract Test
-import { z } from 'zod';
-import { describe, it, expect } from 'vitest';
+  afterAll(async () => {
+    await pool.end();
+    await container.stop();
+  });
 
-export const UserContractSchema = z.object({
-  id: z.string().uuid(),
-  email: z.string().email(),
-  role: z.enum(['admin', 'member', 'guest']),
-  createdAt: z.string().datetime(),
-});
+  it('inserts and retrieves user by id', async () => {
+    const id = crypto.randomUUID();
+    await pool.query('INSERT INTO users (id, email) VALUES ($1, $2)', [id, 'qa@example.com']);
 
-describe('User Contract API Schema', () => {
-  it('validates a compliant backend response payload', () => {
-    const rawPayload = {
-      id: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
-      email: 'user@example.com',
-      role: 'member',
-      createdAt: '2026-09-18T12:00:00.000Z',
-    };
-    const result = UserContractSchema.safeParse(rawPayload);
-    expect(result.success).toBe(true);
+    const res = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+    expect(res.rows.length).toBe(1);
+    expect(res.rows[0].email).toBe('qa@example.com');
   });
 });
 ```
+
+---
+
+## 3. Playwright Page Object Model (POM) E2E Test
+
+```typescript
+// tests/e2e/pages/LoginPage.ts
+import { Page, Locator } from '@playwright/test';
+
+export class LoginPage {
+  readonly page: Page;
+  readonly emailInput: Locator;
+  readonly passwordInput: Locator;
+  readonly submitButton: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.emailInput = page.locator('input[name="email"]');
+    this.passwordInput = page.locator('input[name="password"]');
+    this.submitButton = page.locator('button[type="submit"]');
+  }
+
+  async goto() {
+    await this.page.goto('/login');
+  }
+
+  async login(email: string, pass: string) {
+    await this.emailInput.fill(email);
+    await this.passwordInput.fill(pass);
+    await this.submitButton.click();
+  }
+}
+```
+
+---
+
+## 4. Redis Testcontainers Integration Testing
+
+```typescript
+// tests/integration/rate-limiter.test.ts
+import { describe, it, beforeAll, afterAll, expect } from 'vitest';
+import { GenericContainer, StartedTestContainer } from 'testcontainers';
+import { Redis } from 'ioredis';
+
+describe('Redis Rate Limiter Integration', () => {
+  let redisContainer: StartedTestContainer;
+  let redis: Redis;
+
+  beforeAll(async () => {
+    redisContainer = await new GenericContainer('redis:7-alpine')
+      .withExposedPorts(6379)
+      .start();
+
+    const host = redisContainer.getHost();
+    const port = redisContainer.getMappedPort(6379);
+    redis = new Redis({ host, port });
+  }, 20000);
+
+  afterAll(async () => {
+    await redis.quit();
+    await redisContainer.stop();
+  });
+
+  it('increments and sets ttl on rate limit keys', async () => {
+    const key = 'rate_limit:test_user';
+    const count = await redis.incr(key);
+    await redis.expire(key, 60);
+
+    expect(count).toBe(1);
+    const ttl = await redis.ttl(key);
+    expect(ttl).toBeGreaterThan(0);
+  });
+});
+```
+
+---
+
+## 5. Flaky Test Quarantine Manager
+
+```typescript
+// tests/utils/quarantine.ts
+export function runWithQuarantine<T>(
+  testName: string,
+  testFn: () => Promise<T>,
+  maxRetries: number = 2
+): Promise<T> {
+  let attempt = 0;
+  async function execute(): Promise<T> {
+    try {
+      return await testFn();
+    } catch (err) {
+      attempt++;
+      if (attempt <= maxRetries) {
+        console.warn(`[QUARANTINE_RETRY] Test "${testName}" failed (Attempt ${attempt}/${maxRetries}). Retrying...`);
+        return await execute();
+      }
+      throw err;
+    }
+  }
+  return execute();
+}
+```
+
+---
+
+## 6. Subagent Delegation Matrix
+
+| Subagent | Role & Objective | Deliverable |
+|----------|------------------|-------------|
+| `test-planner` | Risk-based test matrix and coverage strategy | `test_plan.md` |
+| `tdd-guide` | Red-Green-Refactor unit test suite implementation | Vitest test suites |
+| `integration-tester` | Testcontainers integration testing | Repository integration tests |
+| `e2e-runner` | Playwright browser automation & POM suites | E2E test specs |
+| `performance-benchmarker`| k6 load and SLA benchmark execution | Performance report |

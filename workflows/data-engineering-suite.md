@@ -1,20 +1,20 @@
 ---
 trigger: model_decision
-description: "Workflow: Data Engineering Suite - Master Data Engineering & High-Throughput Pipelines orchestrating PostgreSQL, ClickHouse OLAP, Kafka/RabbitMQ event streams, ETL/ELT pipelines, distributed web scraping, and autonomous multi-agent data verification."
+description: "Workflow: Data Engineering Suite - Modern data stack orchestration featuring Medallion Architecture (Bronze/Silver/Gold), streaming ingestion (Kafka/Redpanda), vector columnar analytics (DuckDB/Polars), dbt transformation models, Great Expectations data contracts, and CDC pipelines."
 tags:
   - data-engineering
-  - clickhouse
-  - postgresql
   - kafka
-  - etl
-  - scraping
-  - pipelines
+  - duckdb
+  - polars
+  - dbt
+  - parquet
+  - cdc
   - subagents
 ---
 
-# Data Engineering & High-Throughput Pipelines Master Suite Workflow
+# Data Engineering Master Suite Workflow
 
-**MANDATE**: Build resilient, scalable, and verifiable data pipelines for high-throughput batch and streaming workloads, combining OLTP databases (PostgreSQL), columnar OLAP engines (ClickHouse), message brokers (Kafka), and autonomous subagent validation.
+**MANDATE**: Build scalable, high-throughput, and observable data ingestion, processing, and analytics pipelines adhering to the Medallion Architecture (Bronze -> Silver -> Gold), schema evolution controls, data contract assertions, and automated performance tuning.
 
 ---
 
@@ -22,70 +22,186 @@ tags:
 
 ```mermaid
 graph TD
-    DataReq([Data Ingestion / Pipeline Requirement]) --> Planner[planner: Pipeline Topology & SLA Definition]
-    Planner --> Architect[architect: Schema Normalization, Partitioning & CDC Architecture]
-    Architect --> DBReviewer[database-reviewer: Indexing, Query Plans & Partition Keys]
-    DBReviewer --> TDD[tdd-guide: Data Contract & Schema Transformation Tests]
-    TDD --> Implementer[Implementation: Resilient Workers & Stream Consumers]
-    Implementer --> PerfReviewer[performance-reviewer: Backpressure, Batching & Memory Profile]
-    PerfReviewer --> Deployed([Pipeline Deployed with Telemetry & DLQ])
+    DataReq([Data Pipeline / Analytics Task]) --> DataArchitect[data-architect: Medallion Modeling & Partitioning Strategy]
+    DataArchitect --> PipelineEng[pipeline-engineer: Streaming / Batch Ingestion Kafka & Polars]
+    PipelineEng --> DBTModeler[dbt-modeler: Dimensional SQL Transforms & Lineage Models]
+    DBTModeler --> QualityGuard[data-quality-guard: Great Expectations & Soda Data Contracts]
+    QualityGuard --> PerfTuner[performance-tuner: Parquet / DuckDB Columnar Query Optimizer]
+    PerfTuner --> DataProd([Verified Production Data Lakehouse Pipeline])
 ```
 
 | Phase | Assigned Subagent | Primary Gate | Artifact Generated |
 |-------|-------------------|--------------|---------------------|
-| **1. Topology & SLAs** | `planner` | Data volume, throughput (msg/s), latency SLA | `pipeline_spec.md`, SLA contracts |
-| **2. Storage & Schema** | `architect` | Partition keys, retention policies, CDC setup | DDL schemas, ClickHouse engines |
-| **3. Query & Index Audit** | `database-reviewer` | `EXPLAIN ANALYZE`, zero table scans on hot path | DB indexing recommendations |
-| **4. Transformation Tests** | `tdd-guide` | Schema validation, null handling, idempotent runs | Unit tests for transforms |
-| **5. Throughput & Memory** | `performance-reviewer` | Memory leak checks, batch flushing performance | Benchmark metrics |
+| **1. Data Architecture** | `data-architect` | Medallion schema & dimensional design | `data_architecture.md`, star schema |
+| **2. Pipeline Ingestion** | `pipeline-engineer` | Kafka/CDC consumers & Polars transforms | Ingestion worker scripts |
+| **3. dbt Modeling** | `dbt-modeler` | Idempotent incremental dbt SQL models | dbt models (`.sql`, `.yml`) |
+| **4. Quality Contracts** | `data-quality-guard` | Schema validation, null checks, drift checks | Great Expectations suite |
+| **5. Query Optimization** | `performance-tuner` | Parquet partitioning, vector indexing | Query benchmark report |
 
 ---
 
 ## 2. Step-by-Step Execution Lifecycle
 
-### Step 1: Storage Tiering & Architecture
-1. **OLTP Layer**: PostgreSQL for transactional state, relational integrity, and strict ACID compliance.
-2. **Streaming & Ingestion**: Kafka or Redis Streams with partitioned consumer groups for decoupled message delivery.
-3. **OLAP Layer**: ClickHouse (`ReplacingMergeTree`, `SummingMergeTree`) for analytical aggregations over billions of rows.
+### Step 1: Medallion Architecture & Dimensional Modeling
+1. **Bronze Layer (Raw)**: Ingest raw streaming and batch records verbatim in append-only format with ingestion metadata (`_ingested_at`, `_source_file`).
+2. **Silver Layer (Cleaned)**: Deduplicate, conform data types, parse JSON structures, and apply schema contracts.
+3. **Gold Layer (Aggregated)**: Build Star Schema (Fact and Dimension tables) optimized for BI dashboards and machine learning features.
 
-### Step 2: Resilient Batching & ETL Pipeline
-1. Ingest events into memory buffer.
-2. Flush to OLAP in deterministic micro-batches ($\ge 5,000$ rows or every $1\text{s}$) to avoid small-part fragmentation in ClickHouse.
-3. Route malformed or failed payloads to a Dead Letter Queue (DLQ) with retry exponential backoff.
+```sql
+-- Gold Layer: Star Schema Dimensional Model (PostgreSQL / DuckDB)
+CREATE TABLE IF NOT EXISTS dim_customers (
+    customer_key BIGINT PRIMARY KEY,
+    customer_id UUID NOT NULL,
+    country_code VARCHAR(3) NOT NULL,
+    tier VARCHAR(32) NOT NULL,
+    valid_from TIMESTAMPTZ NOT NULL,
+    valid_to TIMESTAMPTZ,
+    is_current BOOLEAN NOT NULL DEFAULT true
+);
 
-```python
-# ponytail: ClickHouse High-Throughput Batch Ingestion Worker
-import time
-from typing import List, Dict, Any
-
-class BatchBuffer:
-    def __init__(self, flush_size: int = 5000, max_interval_sec: float = 1.0):
-        self.flush_size = flush_size
-        self.max_interval_sec = max_interval_sec
-        self.buffer: List[Dict[str, Any]] = []
-        self.last_flush = time.time()
-
-    def add(self, record: Dict[str, Any]) -> List[Dict[str, Any]] | None:
-        self.buffer.append(record)
-        now = time.time()
-        if len(self.buffer) >= self.flush_size or (now - self.last_flush) >= self.max_interval_sec:
-            return self.flush()
-        return None
-
-    def flush(self) -> List[Dict[str, Any]]:
-        if not self.buffer:
-            return []
-        batch = self.buffer
-        self.buffer = []
-        self.last_flush = time.time()
-        return batch
+CREATE TABLE IF NOT EXISTS fact_daily_sales (
+    date_key INTEGER NOT NULL,
+    customer_key BIGINT NOT NULL REFERENCES dim_customers(customer_key),
+    total_orders INTEGER NOT NULL,
+    gross_revenue_cents BIGINT NOT NULL,
+    discount_cents BIGINT NOT NULL,
+    net_revenue_cents BIGINT NOT NULL,
+    PRIMARY KEY (date_key, customer_key)
+);
 ```
 
-### Step 3: Distributed Web Scraping & Ingestion
-1. Enforce rate-limiting tokens and polite concurrency per target domain.
-2. Use exponential jitter backoff on HTTP $429$ / $503$ responses.
-3. Validate HTML structure changes using schema-conformance assertions before committing extracted data.
+### Step 2: High-Performance Data Processing (Polars / DuckDB)
+1. Use vectorized execution engines (Polars in Python/Rust or DuckDB) instead of heavy JVM clusters for single-node sub-terabyte datasets.
+2. Apply lazy execution (`scan_parquet`) to push down predicates and column projections.
 
-### Step 4: Quality & Idempotency Verification
-1. Enforce idempotent upserts (`ON CONFLICT (id) DO UPDATE` or ClickHouse `ReplacingMergeTree(version)`).
-2. Run data contract validation (`great_expectations` or Pydantic) on all pipeline stages.
+```python
+# pipeline/process_orders.py
+import polars as pl
+
+# ponytail: Vectorized Polars aggregation - single pass lazy projection
+def aggregate_hourly_revenue(parquet_path: str) -> pl.DataFrame:
+    return (
+        pl.scan_parquet(parquet_path)
+        .filter(pl.col("status") == "COMPLETED")
+        .with_columns(
+            pl.col("timestamp").dt.truncate("1h").alias("hour_bucket"),
+            (pl.col("gross_amount_cents") - pl.col("discount_cents")).alias("net_amount_cents")
+        )
+        .group_by(["hour_bucket", "currency"])
+        .agg([
+            pl.count().alias("order_count"),
+            pl.sum("net_amount_cents").alias("total_net_revenue_cents")
+        ])
+        .collect()
+    )
+```
+
+### Step 3: dbt Dimensional Transformations
+1. Write idempotent incremental models with unique key merges (`incremental_strategy='merge'`).
+2. Define source fresh checks (`loaded_at_field`) and column tests (`unique`, `not_null`, `relationships`).
+
+### Step 4: Data Quality Contracts (Great Expectations)
+1. Validate incoming datasets against strict schemas before promoting to Silver/Gold tiers.
+2. Alert on schema drift (unexpected columns or type alterations).
+
+### Step 5: Streaming Change Data Capture (CDC)
+1. Ingest relational database WAL changes with Debezium into Apache Kafka.
+2. Consume events with exactly-once idempotency filters.
+
+### Step 6: Parquet Compaction & ZSTD Compression
+1. Compact small streaming files into 256MB Parquet chunks on scheduled daily cron.
+2. Maintain partition indexing on year/month/day.
+
+```python
+# pipeline/compactor.py
+import duckdb
+
+def compact_daily_partitions(source_dir: str, target_file: str):
+    con = duckdb.connect()
+    con.sql(f'''
+        COPY (SELECT * FROM read_parquet('{source_dir}/*.parquet'))
+        TO '{target_file}' (FORMAT PARQUET, COMPRESSION 'ZSTD', ROW_GROUP_SIZE 100000);
+    ''')
+```
+
+---
+
+## 3. Subagent Execution Prompts
+
+### Subagent: `data-architect`
+```markdown
+You are the Lead Data Architect. Design the data warehouse / lakehouse topology:
+1. Establish the Medallion tier separation (Bronze, Silver, Gold).
+2. Design Star Schema (Facts & Dimensions) with SCD Type 2 tracking for entities.
+3. Define partitioning keys (e.g., date partition by year/month) and compression codecs (Snappy/ZSTD).
+```
+
+### Subagent: `pipeline-engineer`
+```markdown
+You are the Data Pipeline Engineer. Implement ingestion and ETL/ELT pipelines:
+1. Configure Kafka / CDC consumers with at-least-once delivery guarantees.
+2. Author fast, memory-safe data transformations using Polars or DuckDB.
+3. Apply Ponytail Minimalism: avoid Spark/Hadoop clusters if DuckDB/Polars processes the dataset in seconds.
+```
+
+### Subagent: `dbt-modeler`
+```markdown
+You are the dbt Analytics Engineer. Build dimensional models:
+1. Author staging, intermediate, and marts SQL models adhering to dbt style guides.
+2. Configure incremental merge strategies with appropriate unique keys.
+3. Write comprehensive schema.yml documentation and column-level tests.
+```
+
+### Subagent: `data-quality-guard`
+```markdown
+You are the Data Quality Specialist. Enforce data contracts:
+1. Define Great Expectations / Soda assertion suites (Null checks, foreign key integrity, range validations).
+2. Implement automated quarantine for invalid records (Dead Letter Tables).
+3. Set up freshness alerts to catch delayed upstream data pipelines.
+```
+
+### Subagent: `performance-tuner`
+```markdown
+You are the Database & Query Performance Tuner:
+1. Analyze EXPLAIN plans for slow aggregation queries on Postgres/DuckDB.
+2. Optimize Parquet row group sizes (typically 128MB - 256MB) and bloom filters.
+3. Benchmark query latency and memory consumption.
+```
+
+---
+
+## 4. dbt Schema Testing Blueprint
+
+```yaml
+# models/schema.yml
+version: 2
+
+models:
+  - name: fact_daily_sales
+    description: "Daily aggregated revenue and order metrics per customer"
+    columns:
+      - name: date_key
+        tests:
+          - not_null
+      - name: customer_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_key
+      - name: net_revenue_cents
+        tests:
+          - not_null
+```
+
+---
+
+## 5. Definition of Done (DoD) Checklist
+
+- [ ] Medallion Architecture implemented with clear separation between raw and conformed tiers.
+- [ ] Star Schema fact and dimension tables created with foreign key integrity.
+- [ ] Vectorized processing (Polars/DuckDB) utilized for sub-second aggregations.
+- [ ] dbt models documented and covered by automated schema tests (`unique`, `not_null`).
+- [ ] Great Expectations data contract validation active on all ingestion pipelines.
+- [ ] Parquet files partitioned and compressed using ZSTD/Snappy.
+- [ ] `python scripts/safety_guard.py --scan-file .` clean with 0 leaked connection strings.
